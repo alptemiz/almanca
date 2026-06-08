@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A1 Almanca Test Flashcards</title>
+  <style>
+    :root{
+      --bg:#101418; --card:#171d23; --muted:#9aa4af; --text:#e8edf2;
+      --border:#2b3440; --btn:#222b35; --ok:#1f7a3a; --bad:#9b2c2c; --accent:#3b82f6;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:850px;margin:0 auto;padding:18px}
+    header{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px}
+    h1{font-size:20px;margin:0;font-weight:700}
+    .tabs{display:flex;gap:8px}
+    button{border:1px solid var(--border);background:var(--btn);color:var(--text);padding:10px 12px;border-radius:10px;font-size:15px;cursor:pointer}
+    button:hover{filter:brightness(1.12)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .active-tab{background:var(--accent);border-color:var(--accent)}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .meta{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:14px;margin-bottom:14px}
+    .q{font-size:24px;line-height:1.35;margin:12px 0 18px;font-weight:650}
+    .options{display:grid;gap:10px}
+    .option{text-align:left;padding:14px;border-radius:12px;background:#202833;border:1px solid var(--border);font-size:17px}
+    .option.correct{background:var(--ok);border-color:#37a65a;color:white}
+    .option.wrong{background:var(--bad);border-color:#c24141;color:white}
+    .feedback{min-height:32px;margin:14px 0 4px;font-size:16px;color:var(--muted)}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .small{font-size:13px;color:var(--muted)}
+    table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
+    th,td{padding:9px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+    th{color:#cbd5df;background:#141a20;position:sticky;top:0}
+    .pill{display:inline-block;padding:3px 8px;border-radius:999px;background:#253040;color:#cbd5df;font-size:12px}
+    .hidden{display:none}
+    @media (max-width:600px){.q{font-size:21px}header{align-items:flex-start;flex-direction:column}.tabs{width:100%}.tabs button{flex:1}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>A1 Almanca Test Flashcards</h1>
+    <div class="tabs">
+      <button id="studyTab" class="active-tab">Çalış</button>
+      <button id="statsTab">İstatistik</button>
+    </div>
+  </header>
+
+  <section id="study" class="card">
+    <div class="meta">
+      <div id="progress"></div>
+      <div id="score"></div>
+    </div>
+    <div id="question" class="q"></div>
+    <div id="options" class="options"></div>
+    <div id="feedback" class="feedback"></div>
+    <div class="controls">
+      <button id="nextBtn" disabled>Sonraki soru</button>
+      <button id="resetCurrentBtn">Bu soruyu sıfırla</button>
+    </div>
+    <p class="small">Tahtadaki anahtar esas alındı. İptal görünen 33-42 ve tahtada anahtarı görünmeyen 51 dışlandı. Yanlış yapılan sorular daha sık, doğru yapılanlar daha seyrek gelir.</p>
+  </section>
+
+  <section id="stats" class="card hidden">
+    <div class="controls">
+      <button id="resetAllBtn">Tüm istatistikleri sıfırla</button>
+      <button id="exportBtn">JSON yedek al</button>
+    </div>
+    <div id="summary" style="margin-top:12px"></div>
+    <div style="overflow:auto;max-height:70vh">
+      <table id="statsTable"></table>
+    </div>
+  </section>
+</div>
+
+<script>
+const questions = [
+  {id:1, text:'Ich ___ heute nicht arbeiten. Ich bin krank.', options:{a:'kann',b:'muss',c:'darf',d:'will'}, answer:'a'},
+  {id:2, text:'___ du heute Abend ins Kino gehen?', options:{a:'Musst',b:'Willst',c:'Kannst',d:'Sollst'}, answer:'b'},
+  {id:3, text:'Wir ___ leise sein.', options:{a:'sollen',b:'dürfen',c:'wollen',d:'müssen'}, answer:'d'},
+  {id:4, text:'Er ___ nicht gut schwimmen.', options:{a:'darf',b:'kann',c:'will',d:'soll'}, answer:'b'},
+  {id:5, text:'___ ich hier rauchen?', options:{a:'Muss',b:'Kann',c:'Darf',d:'Will'}, answer:'c'},
+  {id:6, text:'Du ___ deine Hausaufgaben machen.', options:{a:'willst',b:'darfst',c:'sollst',d:'kannst'}, answer:'c'},
+  {id:7, text:'Ich ___ später mit dir sprechen.', options:{a:'will',b:'muss',c:'kann',d:'darf'}, answer:'c'},
+  {id:8, text:'___ ihr auch Pizza essen?', options:{a:'Dürft',b:'Könnt',c:'Wollt',d:'Müsst'}, answer:'c'},
+  {id:9, text:'Wir ___ jetzt schlafen gehen.', options:{a:'sollen',b:'dürfen',c:'müssen',d:'wollen'}, answer:'c'},
+  {id:10, text:'Sie ___ das Fenster öffnen.', options:{a:'darf',b:'will',c:'soll',d:'kann'}, answer:'d'},
+  {id:11, text:'Ich ___ um 7 Uhr auf.', options:{a:'wache',b:'stehe',c:'stehe auf',d:'wache auf'}, answer:'b'},
+  {id:12, text:'Wann ___ du mit der Arbeit ___?', options:{a:'fängst...an',b:'fangst...an',c:'fangst...mit',d:'arbeitest...mit'}, answer:'a'},
+  {id:13, text:'Wir ___ heute Abend fern.', options:{a:'sehen',b:'sehen fern',c:'schauen',d:'fernsehen'}, answer:'a'},
+  {id:14, text:'Meine Mutter ___ jeden Samstag ein.', options:{a:'kaufen',b:'einkauft',c:'kauft ein',d:'kauft'}, answer:'a'},
+  {id:15, text:'Der Bus ___ um 9 Uhr ___', options:{a:'kommt...ab',b:'fährt...ab',c:'abfährt',d:'startet...ab'}, answer:'b'},
+  {id:16, text:'Ich sehe ___ Mann.', options:{a:'der',b:'den',c:'dem',d:'des'}, answer:'b'},
+  {id:17, text:'Wir kaufen ___ Brot.', options:{a:'ein',b:'ein das',c:'das',d:'dem'}, answer:'c'},
+  {id:18, text:'Du liebst ___ Frau.', options:{a:'die',b:'der',c:'dem',d:'das'}, answer:'a'},
+  {id:19, text:'Ich höre ___ Musik.', options:{a:'ein',b:'der',c:'die',d:'das'}, answer:'c'},
+  {id:20, text:'Sie sieht ___ Kind.', options:{a:'das',b:'dem',c:'die',d:'den'}, answer:'a'},
+  {id:21, text:'Das ist ___ Vater. (ich)', options:{a:'mein',b:'deine',c:'sein',d:'ihr'}, answer:'a'},
+  {id:22, text:'Ist das ___ Hund? (du)', options:{a:'deine',b:'deiner',c:'dein',d:'euer'}, answer:'c'},
+  {id:23, text:'___ Mutter heißt Anna. (wir)', options:{a:'Ihr',b:'Unsere',c:'Unsere',d:'Unser'}, answer:'b'},
+  {id:24, text:'Wo ist ___ Buch? (sie - tekil)', options:{a:'ihr',b:'ihre',c:'ihres',d:'ihrs'}, answer:'a'},
+  {id:25, text:'___ Lehrer ist nett. (ihr)', options:{a:'Euer',b:'Unser',c:'Eure',d:'Seine'}, answer:'a'},
+  {id:26, text:'Was kostet der ___?', options:{a:'Rock',b:'Pullover',c:'Hose',d:'Anzug'}, answer:'b'},
+  {id:27, text:'Er trägt heute keine ___.', options:{a:'Schuhe',b:'Schal',c:'Hut',d:'Hemd'}, answer:'a'},
+  {id:28, text:'Der ___ ist rot.', options:{a:'Rock',b:'Kleid',c:'Jacke',d:'Bluse'}, answer:'a'},
+  {id:29, text:'Ich habe ___. Ich huste und habe Fieber.', options:{a:'Zahnschmerzen',b:'Erkältung',c:'Hunger',d:'Durst'}, answer:'b'},
+  {id:30, text:'Mein ___ tut weh. (leg)', options:{a:'Arm',b:'Bein',c:'Kopf',d:'Hals'}, answer:'b'},
+  {id:31, text:'Ich habe Fieber und Husten. Ich bin ___.', options:{a:'krank',b:'gesund',c:'müde',d:'munter'}, answer:'a'},
+  {id:32, text:'Hast du ___? Deine Stirn ist heiß!', options:{a:'Zahnweh',b:'Fieber',c:'Husten',d:'Kopfschmerzen'}, answer:'b'},
+  {id:43, text:'Ihr fahrt morgen nach Berlin.', options:{a:'Fahrt ihr morgen nach Berlin?',b:'Fährt ihr morgen nach Berlin?',c:'Fahrt morgen ihr nach Berlin?',d:'Morgen fahrt ihr nach Berlin?'}, answer:'a'},
+  {id:44, text:'(du) ……… (bitte leise sprechen)!', options:{a:'Sprich bitte leise!',b:'Sprecht bitte leise!',c:'Sprechen bitte leise!',d:'Spricht bitte leise!'}, answer:'a'},
+  {id:45, text:'(ihr) ……… (hier bleiben)!', options:{a:'Bleib hier!',b:'Bleibt hier!',c:'Bleiben hier!',d:'Bleibet hier!'}, answer:'b'},
+  {id:46, text:'(Sie) ……… (mir folgen)!', options:{a:'Folge mir!',b:'Folgt mir!',c:'Folgen Sie mir!',d:'Folget mir!'}, answer:'c'},
+  {id:47, text:'(du) ……… (das Fenster öffnen)!', options:{a:'Öffne das Fenster!',b:'Öffnet das Fenster!',c:'Öffnest das Fenster!',d:'Öffnet Fenster!'}, answer:'a'},
+  {id:48, text:'(ihr) ……… (schnell kommen)!', options:{a:'Komm schnell!',b:'Kommt schnell!',c:'Kommen schnell!',d:'Kommet schnell!'}, answer:'b'},
+  {id:49, text:'(Sie) ……… (bitte den Stuhl nehmen)!', options:{a:'Nimm bitte den Stuhl!',b:'Nehmen Sie bitte den Stuhl!',c:'Nehmt bitte den Stuhl!',d:'Nimmt bitte den Stuhl!'}, answer:'b'},
+  {id:50, text:'(du) ……… (den Tisch decken)!', options:{a:'Decke den Tisch!',b:'Deckt den Tisch!',c:'Deckst den Tisch!',d:'Deck den Tisch!'}, answer:'d'}
+];
+
+const KEY = 'almanca_test_flashcards_v1_board_key';
+let state = JSON.parse(localStorage.getItem(KEY) || '{}');
+for (const q of questions) {
+  if (!state[q.id]) state[q.id] = {seen:0, correct:0, wrong:0, streak:0, box:1, last:null};
+}
+let current = null;
+let answered = false;
+
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function weight(q){
+  const s = state[q.id];
+  return Math.max(1, 8 - s.box) + s.wrong * 2 + (s.seen === 0 ? 6 : 0) - Math.min(3, s.streak);
+}
+function pickQuestion(){
+  const pool = [];
+  questions.forEach(q => {
+    const w = Math.max(1, Math.round(weight(q)));
+    for(let i=0;i<w;i++) pool.push(q);
+  });
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function renderQuestion(){
+  current = pickQuestion(); answered = false;
+  const s = state[current.id];
+  document.getElementById('progress').textContent = `Soru ${current.id} | Kutu ${s.box} | Görülme ${s.seen}`;
+  updateScore();
+  document.getElementById('question').textContent = current.text;
+  const opts = document.getElementById('options'); opts.innerHTML = '';
+  for (const k of ['a','b','c','d']) {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = `${k}) ${current.options[k]}`;
+    btn.onclick = () => answer(k, btn);
+    opts.appendChild(btn);
+  }
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('nextBtn').disabled = true;
+}
+function answer(k){
+  if (answered) return;
+  answered = true;
+  const s = state[current.id];
+  s.seen += 1; s.last = new Date().toISOString();
+  const buttons = [...document.querySelectorAll('.option')];
+  buttons.forEach((b,i) => {
+    const key = ['a','b','c','d'][i];
+    b.disabled = true;
+    if (key === current.answer) b.classList.add('correct');
+    if (key === k && key !== current.answer) b.classList.add('wrong');
+  });
+  if (k === current.answer) {
+    s.correct += 1; s.streak += 1; s.box = Math.min(7, s.box + 1);
+    document.getElementById('feedback').textContent = 'Doğru.';
+  } else {
+    s.wrong += 1; s.streak = 0; s.box = 1;
+    document.getElementById('feedback').textContent = `Yanlış. Doğru cevap: ${current.answer}) ${current.options[current.answer]}`;
+  }
+  save(); updateScore();
+  document.getElementById('nextBtn').disabled = false;
+}
+function updateScore(){
+  const totalSeen = questions.reduce((a,q)=>a+state[q.id].seen,0);
+  const totalCorrect = questions.reduce((a,q)=>a+state[q.id].correct,0);
+  const rate = totalSeen ? Math.round(100*totalCorrect/totalSeen) : 0;
+  document.getElementById('score').textContent = `Toplam: ${totalSeen} | Doğru: ${rate}%`;
+}
+function renderStats(){
+  const totalSeen = questions.reduce((a,q)=>a+state[q.id].seen,0);
+  const totalCorrect = questions.reduce((a,q)=>a+state[q.id].correct,0);
+  const totalWrong = questions.reduce((a,q)=>a+state[q.id].wrong,0);
+  document.getElementById('summary').innerHTML = `<span class="pill">Aktif soru: ${questions.length}</span> <span class="pill">Görülme: ${totalSeen}</span> <span class="pill">Doğru: ${totalCorrect}</span> <span class="pill">Yanlış: ${totalWrong}</span>`;
+  const rows = questions.map(q => {
+    const s = state[q.id]; const seen=s.seen; const rate=seen ? Math.round(100*s.correct/seen) : 0;
+    return `<tr><td>${q.id}</td><td>${q.text}</td><td>${q.answer}) ${q.options[q.answer]}</td><td>${seen}</td><td>${s.correct}</td><td>${s.wrong}</td><td>${rate}%</td><td>${s.box}</td></tr>`;
+  }).join('');
+  document.getElementById('statsTable').innerHTML = `<thead><tr><th>No</th><th>Soru</th><th>Tahta cevabı</th><th>Görüldü</th><th>Doğru</th><th>Yanlış</th><th>Oran</th><th>Kutu</th></tr></thead><tbody>${rows}</tbody>`;
+}
+document.getElementById('nextBtn').onclick = renderQuestion;
+document.getElementById('resetCurrentBtn').onclick = () => { if(current){ state[current.id] = {seen:0, correct:0, wrong:0, streak:0, box:1, last:null}; save(); renderQuestion(); }};
+document.getElementById('resetAllBtn').onclick = () => { if(confirm('Tüm istatistikler sıfırlansın mı?')){ questions.forEach(q => state[q.id]={seen:0, correct:0, wrong:0, streak:0, box:1, last:null}); save(); renderStats(); }};
+document.getElementById('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'almanca_flashcard_istatistik.json'; a.click();
+};
+document.getElementById('studyTab').onclick = () => { document.getElementById('study').classList.remove('hidden'); document.getElementById('stats').classList.add('hidden'); document.getElementById('studyTab').classList.add('active-tab'); document.getElementById('statsTab').classList.remove('active-tab'); };
+document.getElementById('statsTab').onclick = () => { renderStats(); document.getElementById('study').classList.add('hidden'); document.getElementById('stats').classList.remove('hidden'); document.getElementById('statsTab').classList.add('active-tab'); document.getElementById('studyTab').classList.remove('active-tab'); };
+renderQuestion();
+</script>
+</body>
+</html>
